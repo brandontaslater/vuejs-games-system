@@ -1,2 +1,4 @@
-# vuejs-tic-tac-toe
-A simple implementation of TicTacToe written in VueJs
+# vuejs-games-system
+## Tic Tac Toe
+A simple implementation of a games system including:
+- TicTacToe written in VueJs
