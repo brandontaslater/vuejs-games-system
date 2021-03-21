@@ -39,7 +39,20 @@
         :playerTurn="playerTurn"
       ></board>
     </div>
-    <button v-show="show.board">Reset Board</button>
+    <button
+      v-show="show.board"
+      @click="resetGame"
+      style="width: 100px; padding: 10px 0px; margin-right: 15px"
+    >
+      Reset Board
+    </button>
+    <button
+      v-show="show.board"
+      @click="backToSelection"
+      style="width: 100px; padding: 10px 0px; margin-left: 15px"
+    >
+      Back
+    </button>
   </div>
 </template>
 
@@ -74,22 +87,6 @@ export default {
   },
   created() {},
   computed: {},
-  watch: {
-    boardSize: {
-      handler: function () {
-        console.log("helloo");
-        if (this.input.boardSize == 4 || this.input.boardSize == 5) {
-          this.warning.display = true;
-          this.warming.message =
-            "Selecting this game mode hijacks the orignal tic-tac-toe and makes it connect 3.";
-        } else {
-          this.warning.display = false;
-          this.warming.message = "";
-        }
-      },
-      deep: true,
-    },
-  },
   methods: {
     initialise: function () {
       this.warning.display = false;
@@ -100,10 +97,27 @@ export default {
       this.boardSquareValues = Array(
         this.input.boardSize * this.input.boardSize
       ).fill("");
-      this.winLines = this.winLinesCalc();
-
+      this.winLinesCalc();
       this.show.input = false;
       this.show.board = true;
+    },
+    resetGame: function () {
+      this.show.board = false;
+      this.warning.display = false;
+      this.winningPlayer = "";
+      this.playerTurn = "X";
+      this.squaresOccupied = 0;
+      this.potentialWinner = [true, true];
+      this.boardSquareValues = Array(
+        this.input.boardSize * this.input.boardSize
+      ).fill("");
+      this.show.board = true;
+    },
+    backToSelection: function () {
+      this.show.board = false;
+      this.warning.display = false;
+      this.show.input = true;
+      this.input.boardSize = 3;
     },
     displayRuleWarning: function (value) {
       if (value == 4 || value == 5) {
@@ -117,7 +131,6 @@ export default {
     },
     checkDraw: function () {
       ["X", "O"].forEach((player) => {
-        let blockedLines = 0; //8 max
         let draw = true;
         this.winLines.every((winline) => {
           let canWin = 0;
@@ -126,7 +139,6 @@ export default {
               this.boardSquareValues[winSquare] != player &&
               this.boardSquareValues[winSquare] != ""
             ) {
-              blockedLines++;
               return false;
             }
             canWin++;
@@ -137,30 +149,24 @@ export default {
           }
           return true;
         });
-        if (player == "X") {
-          if (
-            draw ||
-            (this.playerTurn == "O" &&
-              blockedLines >= this.winLines.length - 1 &&
-              this.squaresOccupied >=
-                this.input.boardSize * this.input.boardSize - 2)
-          ) {
+
+        if (draw) {
+          if (player == "X") {
             this.potentialWinner[0] = false;
-          }
-        } else if (player == "O") {
-          if (
-            draw ||
-            (this.playerTurn == "X" &&
-              blockedLines >= this.winLines.length - 1 &&
-              this.squaresOccupied >=
-                this.input.boardSize * this.input.boardSize - 2)
-          ) {
+          } else if (player == "O") {
             this.potentialWinner[1] = false;
           }
         }
       });
 
-      if (!this.potentialWinner[0] && !this.potentialWinner[1]) {
+      if (
+        (!this.potentialWinner[0] && !this.potentialWinner[1]) ||
+        (this.squaresOccupied ==
+          this.input.boardSize * this.input.boardSize - 2 &&
+          !(this.potentialWinner[0] && this.potentialWinner[1]))
+      ) {
+        this.potentialWinner[0] = false;
+        this.potentialWinner[1] = false;
         return true;
       }
 
@@ -198,22 +204,13 @@ export default {
       this.warning.display = false;
 
       let rem = index % this.input.boardSize;
-      //let int = Math.floor(index / this.input.boardSize);
-
       for (let x = 0; x < this.input.boardSize; x++) {
-        console.log(
-          "value: " +
-            ((this.input.boardSize - x) * this.input.boardSize -
-              (this.input.boardSize - rem))
-        );
-
         if (
           this.boardSquareValues[
             (this.input.boardSize - x) * this.input.boardSize -
               (this.input.boardSize - rem)
           ] == ""
         ) {
-          console.log("hello");
           this.squaresOccupied++;
           this.boardSquareValues[
             (this.input.boardSize - x) * this.input.boardSize -
@@ -227,7 +224,7 @@ export default {
           this.warning.message =
             "Player " +
             this.playerTurn +
-            " cannot select an already occupied square!";
+            " cannot select an already full column!";
         }
       }
     },
@@ -246,7 +243,7 @@ export default {
     },
     winLinesCalc: function () {
       let boardSize = parseInt(this.input.boardSize, 10);
-      let lines = [];
+      //let lines = [];
       let combinationsTotal = 0;
       if (boardSize == 3) {
         combinationsTotal = 1;
@@ -258,7 +255,11 @@ export default {
       for (let x = 0; x <= (boardSize - 1) * boardSize; x += boardSize) {
         let startingIndex = x;
         for (let y = 0; y < combinationsTotal; y++) {
-          lines.push([startingIndex, startingIndex + 1, startingIndex + 2]);
+          this.winLines.push([
+            startingIndex,
+            startingIndex + 1,
+            startingIndex + 2,
+          ]);
           startingIndex++;
         }
       }
@@ -267,7 +268,7 @@ export default {
       for (let x = 0; x < boardSize; x++) {
         let startingIndex = x;
         for (let y = 0; y < combinationsTotal; y++) {
-          lines.push([
+          this.winLines.push([
             startingIndex,
             startingIndex + boardSize,
             startingIndex + boardSize * 2,
@@ -284,13 +285,13 @@ export default {
 
           let startingIndexInt = Math.floor(startingIndex / boardSize);
 
-          lines.push([
+          this.winLines.push([
             startingIndex,
             startingIndex + boardSize + 1,
             startingIndex + boardSize * 2 + 2,
           ]);
 
-          lines.push([
+          this.winLines.push([
             boardSize * startingIndexInt + boardSize - 1 - startingIndexRem,
             boardSize * startingIndexInt +
               boardSize -
@@ -313,7 +314,7 @@ export default {
       combinationsTotal = boardSize - 3;
       for (let x = boardSize; x < (boardSize - 2) * boardSize; x += boardSize) {
         for (let y = 0; y < combinationsTotal; y++) {
-          lines.push([
+          this.winLines.push([
             (y + 1) * x + y,
             (y + 1) * x + y + boardSize + 1,
             (y + 1) * x + y + boardSize * 2 + 2,
@@ -323,7 +324,7 @@ export default {
 
           let indexInt = Math.floor(((y + 1) * x + y) / boardSize);
 
-          lines.push([
+          this.winLines.push([
             boardSize * indexInt + boardSize - 1 - indexRem,
             boardSize * indexInt + boardSize - 1 - indexRem + (boardSize - 1),
             boardSize * indexInt +
@@ -335,7 +336,6 @@ export default {
         }
         combinationsTotal--;
       }
-      return lines;
     },
     changePlayer: function () {
       if (this.playerTurn == "X") {
@@ -349,7 +349,6 @@ export default {
       this.warning.message = "";
 
       if (this.input.boardSize != 3) {
-        console.log("here");
         this.dropValue(clickedSquare);
       } else {
         this.checkFilled(clickedSquare);
@@ -359,11 +358,13 @@ export default {
         alert(
           "Winner Winner Chicken Dinner Player " + this.winningPlayer + "!"
         );
-        location.reload();
+        this.reset();
+        //location.reload();
       } else {
         if (this.checkDraw()) {
           alert("Unlucky Chucky its a Draw!");
-          location.reload();
+          this.reset();
+          //location.reload();
         }
       }
     },
