@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png" width="150" height="150" />
+    <img alt="Vue logo" src="./assets/logo.png" width="120" height="120" />
     <TicTacToeGame></TicTacToeGame>
   </div>
 </template>

@@ -2,14 +2,44 @@
   <div id="game">
     <h1>Tic Tac Toe</h1>
     <h3 class="warning" v-show="warning.display">{{ warning.message }}</h3>
-    <div id="tic-tac-toe-board">
+    <div v-show="show.input" class="input">
+      <section>
+        <h3>Select a Board Size?</h3>
+        <input
+          type="radio"
+          v-model="input.boardSize"
+          value="3"
+          @click="displayRuleWarning(3)"
+        />Standard
+        <input
+          type="radio"
+          v-model="input.boardSize"
+          value="4"
+          @click="displayRuleWarning(4)"
+        />Medium
+        <input
+          type="radio"
+          v-model="input.boardSize"
+          value="5"
+          @click="displayRuleWarning(5)"
+        />Large
+        <br />
+      </section>
+      <p>
+        <strong>{{ input.boardSize }} x {{ input.boardSize }}</strong> Board
+        Size.
+      </p>
+      <button @click="initialise">Play</button>
+    </div>
+    <div v-show="show.board" id="tic-tac-toe-board">
       <board
-        :boardSquareValues="this.boardSquareValues"
+        :boardLength="parseInt(input.boardSize, 10)"
+        :boardSquareValues="boardSquareValues"
         v-on:squareClicked="squareClicked"
         :playerTurn="playerTurn"
       ></board>
     </div>
-    <button>Reset Board</button>
+    <button v-show="show.board">Reset Board</button>
   </div>
 </template>
 
@@ -23,13 +53,20 @@ export default {
   },
   data: function () {
     return {
-      boardSquareValues: Array(9).fill(""),
+      input: {
+        boardSize: 3,
+      },
+      boardSquareValues: [],
       playerTurn: "X",
       winningPlayer: "",
-      winLines: this.winLinesCalc(),
+      winLines: [],
       warning: {
         display: false,
         message: "",
+      },
+      show: {
+        input: true,
+        board: false,
       },
       potentialWinner: [true, true],
       squaresOccupied: 0,
@@ -37,10 +74,49 @@ export default {
   },
   created() {},
   computed: {},
+  watch: {
+    boardSize: {
+      handler: function () {
+        console.log("helloo");
+        if (this.input.boardSize == 4 || this.input.boardSize == 5) {
+          this.warning.display = true;
+          this.warming.message =
+            "Selecting this game mode hijacks the orignal tic-tac-toe and makes it connect 3.";
+        } else {
+          this.warning.display = false;
+          this.warming.message = "";
+        }
+      },
+      deep: true,
+    },
+  },
   methods: {
+    initialise: function () {
+      this.warning.display = false;
+      this.winningPlayer = "";
+      this.playerTurn = "X";
+      this.squaresOccupied = 0;
+      this.potentialWinner = [true, true];
+      this.boardSquareValues = Array(
+        this.input.boardSize * this.input.boardSize
+      ).fill("");
+      this.winLines = this.winLinesCalc();
+
+      this.show.input = false;
+      this.show.board = true;
+    },
+    displayRuleWarning: function (value) {
+      if (value == 4 || value == 5) {
+        this.warning.display = true;
+        this.warning.message =
+          "Selecting this game mode hijacks the orignal tic-tac-toe and makes similar to connect 3 on a smaller scale.";
+      } else {
+        this.warning.display = false;
+        this.warning.message = "";
+      }
+    },
     checkDraw: function () {
       ["X", "O"].forEach((player) => {
-        console.log("Looking for potential wins for: player " + player);
         let blockedLines = 0; //8 max
         let draw = true;
         this.winLines.every((winline) => {
@@ -50,8 +126,6 @@ export default {
               this.boardSquareValues[winSquare] != player &&
               this.boardSquareValues[winSquare] != ""
             ) {
-              console.log("blocked line");
-              console.log(winline);
               blockedLines++;
               return false;
             }
@@ -60,9 +134,6 @@ export default {
           });
           if (canWin == 3) {
             draw = false;
-            console.log("blockedLines: " + blockedLines);
-            console.log("can win");
-            console.log(winline);
           }
           return true;
         });
@@ -70,8 +141,9 @@ export default {
           if (
             draw ||
             (this.playerTurn == "O" &&
-              blockedLines >= 7 &&
-              this.squaresOccupied >= 7)
+              blockedLines >= this.winLines.length - 1 &&
+              this.squaresOccupied >=
+                this.input.boardSize * this.input.boardSize - 2)
           ) {
             this.potentialWinner[0] = false;
           }
@@ -79,15 +151,13 @@ export default {
           if (
             draw ||
             (this.playerTurn == "X" &&
-              blockedLines >= 7 &&
-              this.squaresOccupied >= 7)
+              blockedLines >= this.winLines.length - 1 &&
+              this.squaresOccupied >=
+                this.input.boardSize * this.input.boardSize - 2)
           ) {
             this.potentialWinner[1] = false;
           }
         }
-        console.log(this.squaresOccupied);
-        console.log("blockedLines: " + blockedLines);
-        console.log("DRAW: " + draw);
       });
 
       if (!this.potentialWinner[0] && !this.potentialWinner[1]) {
@@ -101,6 +171,10 @@ export default {
         let player = this.boardSquareValues[winLine[0]];
         let completedLine = 0;
         winLine.every((winSquare) => {
+          if (player == "") {
+            return false;
+          }
+
           if (player == this.boardSquareValues[winSquare]) {
             completedLine++;
             return true;
@@ -120,6 +194,43 @@ export default {
 
       return false;
     },
+    dropValue: function (index) {
+      this.warning.display = false;
+
+      let rem = index % this.input.boardSize;
+      //let int = Math.floor(index / this.input.boardSize);
+
+      for (let x = 0; x < this.input.boardSize; x++) {
+        console.log(
+          "value: " +
+            ((this.input.boardSize - x) * this.input.boardSize -
+              (this.input.boardSize - rem))
+        );
+
+        if (
+          this.boardSquareValues[
+            (this.input.boardSize - x) * this.input.boardSize -
+              (this.input.boardSize - rem)
+          ] == ""
+        ) {
+          console.log("hello");
+          this.squaresOccupied++;
+          this.boardSquareValues[
+            (this.input.boardSize - x) * this.input.boardSize -
+              (this.input.boardSize - rem)
+          ] = this.playerTurn;
+          this.changePlayer();
+          x = this.input.boardSize;
+        }
+        if (x == this.input.boardSize - 1) {
+          this.warning.display = true;
+          this.warning.message =
+            "Player " +
+            this.playerTurn +
+            " cannot select an already occupied square!";
+        }
+      }
+    },
     checkFilled: function (index) {
       if (this.boardSquareValues[index] != "") {
         this.warning.display = true;
@@ -134,16 +245,97 @@ export default {
       }
     },
     winLinesCalc: function () {
-      return [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-      ];
+      let boardSize = parseInt(this.input.boardSize, 10);
+      let lines = [];
+      let combinationsTotal = 0;
+      if (boardSize == 3) {
+        combinationsTotal = 1;
+      } else {
+        combinationsTotal = boardSize - 2;
+      }
+
+      //horizontal -
+      for (let x = 0; x <= (boardSize - 1) * boardSize; x += boardSize) {
+        let startingIndex = x;
+        for (let y = 0; y < combinationsTotal; y++) {
+          lines.push([startingIndex, startingIndex + 1, startingIndex + 2]);
+          startingIndex++;
+        }
+      }
+
+      //vertical |
+      for (let x = 0; x < boardSize; x++) {
+        let startingIndex = x;
+        for (let y = 0; y < combinationsTotal; y++) {
+          lines.push([
+            startingIndex,
+            startingIndex + boardSize,
+            startingIndex + boardSize * 2,
+          ]);
+          startingIndex += boardSize;
+        }
+      }
+
+      // across - diagonal / \
+      for (let x = 0; x < boardSize - 2; x++) {
+        let startingIndex = x;
+        for (let y = 0; y < combinationsTotal; y++) {
+          let startingIndexRem = startingIndex % boardSize;
+
+          let startingIndexInt = Math.floor(startingIndex / boardSize);
+
+          lines.push([
+            startingIndex,
+            startingIndex + boardSize + 1,
+            startingIndex + boardSize * 2 + 2,
+          ]);
+
+          lines.push([
+            boardSize * startingIndexInt + boardSize - 1 - startingIndexRem,
+            boardSize * startingIndexInt +
+              boardSize -
+              1 -
+              startingIndexRem +
+              (boardSize - 1),
+            boardSize * startingIndexInt +
+              boardSize -
+              1 -
+              startingIndexRem +
+              (boardSize * 2 - 2),
+          ]);
+
+          startingIndex += boardSize + 1;
+        }
+        combinationsTotal--;
+      }
+
+      // down | diagonal \
+      combinationsTotal = boardSize - 3;
+      for (let x = boardSize; x < (boardSize - 2) * boardSize; x += boardSize) {
+        for (let y = 0; y < combinationsTotal; y++) {
+          lines.push([
+            (y + 1) * x + y,
+            (y + 1) * x + y + boardSize + 1,
+            (y + 1) * x + y + boardSize * 2 + 2,
+          ]);
+
+          let indexRem = ((y + 1) * x + y) % boardSize;
+
+          let indexInt = Math.floor(((y + 1) * x + y) / boardSize);
+
+          lines.push([
+            boardSize * indexInt + boardSize - 1 - indexRem,
+            boardSize * indexInt + boardSize - 1 - indexRem + (boardSize - 1),
+            boardSize * indexInt +
+              boardSize -
+              1 -
+              indexRem +
+              (boardSize * 2 - 2),
+          ]);
+        }
+        combinationsTotal--;
+      }
+      return lines;
     },
     changePlayer: function () {
       if (this.playerTurn == "X") {
@@ -156,7 +348,12 @@ export default {
       this.warning.display = false;
       this.warning.message = "";
 
-      this.checkFilled(clickedSquare);
+      if (this.input.boardSize != 3) {
+        console.log("here");
+        this.dropValue(clickedSquare);
+      } else {
+        this.checkFilled(clickedSquare);
+      }
 
       if (this.checkWinner()) {
         alert(
@@ -166,11 +363,9 @@ export default {
       } else {
         if (this.checkDraw()) {
           alert("Unlucky Chucky its a Draw!");
-          //location.reload();
+          location.reload();
         }
       }
-
-      console.log("squares occupied: " + this.squaresOccupied);
     },
   },
 };
