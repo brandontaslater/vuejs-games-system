@@ -1,42 +1,13 @@
 <template>
   <div id="board">
     <h1>It's player {{ playerTurn }}'s turn...</h1>
-    <div class="tictactoe-board">
+
+    <div v-bind:style="ticTacToeBoard">
       <square
-        :squareValue="boardSquareValues[0]"
-        @click.native="emitClicked(0)"
-      ></square>
-      <square
-        :squareValue="boardSquareValues[1]"
-        @click.native="emitClicked(1)"
-      ></square>
-      <square
-        :squareValue="boardSquareValues[2]"
-        @click.native="emitClicked(2)"
-      ></square>
-      <square
-        @click.native="emitClicked(3)"
-        :squareValue="boardSquareValues[3]"
-      ></square>
-      <square
-        :squareValue="boardSquareValues[4]"
-        @click.native="emitClicked(4)"
-      ></square>
-      <square
-        :squareValue="boardSquareValues[5]"
-        @click.native="emitClicked(5)"
-      ></square>
-      <square
-        :squareValue="boardSquareValues[6]"
-        @click.native="emitClicked(6)"
-      ></square>
-      <square
-        :squareValue="boardSquareValues[7]"
-        @click.native="emitClicked(7)"
-      ></square>
-      <square
-        :squareValue="boardSquareValues[8]"
-        @click.native="emitClicked(8)"
+        v-for="(squareValue, index) in boardSquareValues"
+        v-bind:key="index"
+        :squareValue="squareValue"
+        @click.native="emitClicked(index)"
       ></square>
     </div>
   </div>
@@ -51,23 +22,54 @@ export default {
     square,
   },
   props: {
+    boardLength: {
+      type: [Number, String],
+    },
     playerTurn: {
       type: String,
+      default: function () {
+        return "";
+      },
     },
     boardSquareValues: {
       type: Array,
       default: function () {
-        return Object.assign({}, Array(9).fill(""));
+        return Object.assign({}, Array(16).fill(""));
       },
     },
   },
   created() {},
   data: function () {
-    return {};
+    return {
+      ticTacToeBoardClass: {
+        display: "grid",
+        rows: "",
+        columns: "",
+      },
+    };
   },
   methods: {
     emitClicked: function (square) {
       this.$emit("squareClicked", square);
+    },
+    setTicTacToeClassObject: function () {
+      this.ticTacToeBoardClass.rows = "";
+      this.ticTacToeBoardClass.columns = "";
+      for (let index = 0; index < this.boardLength; index++) {
+        this.ticTacToeBoardClass.rows += "100px ";
+        this.ticTacToeBoardClass.columns += "100px ";
+      }
+    },
+  },
+
+  computed: {
+    ticTacToeBoard: function () {
+      this.setTicTacToeClassObject();
+      return {
+        display: this.ticTacToeBoardClass.display,
+        "grid-template-rows": this.ticTacToeBoardClass.rows,
+        "grid-template-columns": this.ticTacToeBoardClass.columns,
+      };
     },
   },
 };
@@ -79,7 +81,7 @@ export default {
 }
 .tictactoe-board {
   display: grid;
-  grid-template-rows: 100px 100px 100px;
-  grid-template-columns: 100px 100px 100px;
+  grid-template-rows: 100px 100px 100px 100px 100px 100px;
+  grid-template-columns: 100px 100px 100px 100px 100px 100px;
 }
 </style>
