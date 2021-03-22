@@ -15,7 +15,7 @@ From within the project folder open up a console of choice.
 - npm run serve
 
 ## Unit Testing (Jest)
-From withion the project folder open up a console of choice.
+From within the project folder open up a console of choice.
 - npm run test 
 
 Serveral unit tests have been provided to test the core functionality of the game.
