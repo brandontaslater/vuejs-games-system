@@ -94,6 +94,7 @@ export default {
     */
     initialise: function () {
       this.warning.display = false;
+      this.warning.message = "";
       this.winningPlayer = "";
       this.playerTurn = "X";
       this.squaresOccupied = 0;
@@ -119,6 +120,7 @@ export default {
     resetGame: function () {
       this.show.board = false;
       this.warning.display = false;
+      this.warning.message = "";
       this.winningPlayer = "";
       this.playerTurn = "X";
       this.squaresOccupied = 0;
